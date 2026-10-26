@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Edit book{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Edit book #{{ book.book_id }}</h1>
+  <form method="post" action="{{ url_for('edit_book', book_id=book.book_id) }}" enctype="multipart/form-data" data-form="book" novalidate>
+    <ul class="errors" {% if not errors %}hidden{% endif %}>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    <label>Title <input type="text" name="title" value="{{ form.title }}"></label>
+    <label>Price <input type="text" name="price" inputmode="decimal" value="{{ form.price }}"></label>
+    <label>Author
+      <select name="author_id">
+        <option value="">Choose author…</option>
+        {% for a in authors %}
+        <option value="{{ a.author_id }}" {% if form.author_id|string == a.author_id|string %}selected{% endif %}>{{ a.name }} (#{{ a.author_id }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="image-edit">
+      {% if book.cover %}
+      <img class="thumb cover big" src="{{ url_for('static', filename='uploads/books/' + book.cover) }}" alt="Current cover">
+      {% else %}
+      <div class="thumb cover big placeholder" aria-label="No cover">📖</div>
+      {% endif %}
+      <div class="grow">
+        <label>{{ 'Replace cover' if book.cover else 'Cover (optional)' }}
+          <input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp">
+        </label>
+        {% if book.cover %}
+        <label class="check-line"><input type="checkbox" name="remove_image" value="1"> Remove the current cover</label>
+        {% endif %}
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn grow">Save</button>
+      <a class="btn ghost grow center" href="{{ url_for('books') }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

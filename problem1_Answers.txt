@@ -1,0 +1,111 @@
+Lab 3 - Problem 1 - Answers
+======================================================================
+Q1.1  Insert a row in DEPARTMENT that references a row in EMPLOYEE.
+      Then try to delete the referenced row. What will happen?
+======================================================================
+
+SQL used:
+
+mysql> USE company;
+Database changed
+
+mysql> INSERT INTO employee (ssn, fname, lname, bdate, address, gender, salary, Dno)
+    -> VALUES ('999000111', 'Nada', 'Samir', '1992-04-02', '3 Gleem, Alexandria', 'F', 8000.00, NULL);
+Query OK, 1 row affected (0.01 sec)
+
+mysql> INSERT INTO department (Dnumber, Dname, mgr_ssn, mgr_start_date)
+    -> VALUES (4, 'Marketing', '999000111', '2024-01-01');
+Query OK, 1 row affected (0.01 sec)
+
+mysql> DELETE FROM employee WHERE ssn = '999000111';
+ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`company`.`department`, CONSTRAINT `fk_dept_mgr` FOREIGN KEY (`mgr_ssn`) REFERENCES `employee` (`ssn`))
+
+Answer:
+MySQL rejects the DELETE (error 1451) and the row stays in the table.
+The employee is still referenced by department 4 (it is its manager), and
+referential integrity says that a primary key value that is referenced by a
+foreign key cannot disappear. The default action of a foreign key is
+RESTRICT / NO ACTION.
+To delete the employee we must first remove the reference (delete the
+department, or change its manager), or define the foreign key with
+ON DELETE SET NULL / ON DELETE CASCADE. Clean-up in the right order works:
+
+mysql> DELETE FROM department WHERE Dnumber = 4;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> DELETE FROM employee WHERE ssn = '999000111';
+Query OK, 1 row affected (0.01 sec)
+
+
+======================================================================
+Q1.2  Insert a row in PROJECT that references a DEPARTMENT that does not
+      exist yet. What will happen?
+======================================================================
+
+SQL used:
+
+mysql> INSERT INTO project (Pnumber, Pname, Plocation, Dno)
+    -> VALUES (50, 'Mobile App', 'Alexandria', 9);
+ERROR 1452 : Cannot add or update a child row: a foreign key constraint fails (`company`.`project`, CONSTRAINT `fk_project_dept` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
+
+Answer:
+MySQL rejects the INSERT (error 1452) and nothing is added. A foreign key
+value must be NULL or equal to an existing primary key value of the
+referenced table. Department 9 does not exist and project.Dno is NOT NULL,
+so the row is refused. The parent row must be inserted first:
+
+
+======================================================================
+Q1.3  If mgr_ssn and Dno are both NOT NULL, how will you insert the first
+      row in EMPLOYEE or DEPARTMENT?
+======================================================================
+
+Test in a separate scratch database, where both columns are NOT NULL:
+
+mysql> DROP DATABASE IF EXISTS company_q13;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> CREATE DATABASE company_q13;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> USE company_q13;
+Database changed
+
+mysql> CREATE TABLE employee (
+    ->   ssn   CHAR(9)     NOT NULL,
+    ->   fname VARCHAR(30) NOT NULL,
+    ->   Dno   INT         NOT NULL,
+    ->   PRIMARY KEY (ssn)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> CREATE TABLE department (
+    ->   Dnumber INT         NOT NULL,
+    ->   Dname   VARCHAR(50) NOT NULL,
+    ->   mgr_ssn CHAR(9)     NOT NULL,
+    ->   PRIMARY KEY (Dnumber)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> ALTER TABLE employee ADD CONSTRAINT fk_emp_dept FOREIGN KEY (Dno) REFERENCES department (Dnumber);
+Query OK, 0 rows affected (0.04 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> ALTER TABLE department ADD CONSTRAINT fk_dept_mgr FOREIGN KEY (mgr_ssn) REFERENCES employee (ssn);
+Query OK, 0 rows affected (0.04 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+Try the first employee, then the first department:
+
+mysql> INSERT INTO employee (ssn, fname, Dno) VALUES ('111223333', 'Ahmed', 1);
+ERROR 1452 : Cannot add or update a child row: a foreign key constraint fails (`company_q13`.`employee`, CONSTRAINT `fk_emp_dept` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
+
+mysql> INSERT INTO department (Dnumber, Dname, mgr_ssn) VALUES (1, 'Headquarters', '111223333');
+ERROR 1452 : Cannot add or update a child row: a foreign key constraint fails (`company_q13`.`department`, CONSTRAINT `fk_dept_mgr` FOREIGN KEY (`mgr_ssn`) REFERENCES `employee` (`ssn`))
+
+Answer:
+Both inserts fail: the employee needs an existing department and the
+department needs an existing employee , so with two NOT NULL
+foreign keys that point at each other the first row cannot be inserted with
+normal INSERT statements.
+

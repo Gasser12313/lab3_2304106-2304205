@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Edit author{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Edit author #{{ author.author_id }}</h1>
+  <form method="post" action="{{ url_for('edit_author', author_id=author.author_id) }}" enctype="multipart/form-data" data-form="author" novalidate>
+    <ul class="errors" {% if not errors %}hidden{% endif %}>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    <label>Name <input type="text" name="name" value="{{ form.name }}"></label>
+    <label>Country <input type="text" name="country" value="{{ form.country }}"></label>
+    <div class="image-edit">
+      {% if author.photo %}
+      <img class="thumb photo big" src="{{ url_for('static', filename='uploads/authors/' + author.photo) }}" alt="Current photo">
+      {% else %}
+      <div class="thumb photo big placeholder" aria-label="No photo">{{ author.name[:1]|upper }}</div>
+      {% endif %}
+      <div class="grow">
+        <label>{{ 'Replace photo' if author.photo else 'Photo (optional)' }}
+          <input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp">
+        </label>
+        {% if author.photo %}
+        <label class="check-line"><input type="checkbox" name="remove_image" value="1"> Remove the current photo</label>
+        {% endif %}
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn grow">Save</button>
+      <a class="btn ghost grow center" href="{{ url_for('authors') }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

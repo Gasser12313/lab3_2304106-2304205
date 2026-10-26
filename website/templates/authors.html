@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Authors{% endblock %}
+{% block content %}
+<div class="card wide">
+  <h1>Authors</h1>
+
+  <div class="scope">
+    <form method="post" action="{{ url_for('add_author') }}" class="add-form" enctype="multipart/form-data" data-form="author" novalidate>
+      <input type="text" name="name" placeholder="Name" aria-label="Name" value="{{ form.name or '' }}">
+      <input type="text" name="country" placeholder="Country" aria-label="Country" value="{{ form.country or '' }}">
+      <label class="file-field">Photo (optional)
+        <input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp">
+      </label>
+      <button class="btn">Add author</button>
+    </form>
+    <ul class="errors" {% if not errors %}hidden{% endif %}>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  </div>
+
+  {% if authors %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Photo</th><th>Name</th><th>Country</th><th></th></tr></thead>
+      <tbody>
+        {% for a in authors %}
+        <tr>
+          <td>{{ a.author_id }}</td>
+          <td>
+            {% if a.photo %}
+            <img class="thumb photo" src="{{ url_for('static', filename='uploads/authors/' + a.photo) }}" alt="Photo of {{ a.name }}" loading="lazy">
+            {% else %}
+            <div class="thumb photo placeholder" aria-label="No photo">{{ a.name[:1]|upper }}</div>
+            {% endif %}
+          </td>
+          <td class="main-col">{{ a.name }}</td>
+          <td>{{ a.country }}</td>
+          <td>
+            <div class="inline-actions">
+              <a class="btn small" href="{{ url_for('edit_author', author_id=a.author_id) }}">Edit</a>
+              <form method="post" action="{{ url_for('delete_author', author_id=a.author_id) }}" data-confirm="Delete this author AND all of their books?">
+                <button class="btn small danger">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted note">Deleting an author also deletes all the books of that author.</p>
+  {% else %}
+  <p class="empty">No authors yet. Add the first one above!</p>
+  {% endif %}
+</div>
+{% endblock %}
